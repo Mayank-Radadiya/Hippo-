@@ -11,8 +11,8 @@ const start = async () => {
     // Initialize Payload and resolve the Promise
     const payload = await getPayloadClient({
       initOptions: {
-        express: app,
-        onInit: async (cms) => {
+
+        onInit: async (cms:any) => {
           cms.logger.info(`Admin URL: ${cms.getAdminURL()}`);
         },
       },

@@ -1,13 +1,8 @@
 import dotenv from "dotenv";
 import path from "path";
-//Payload A CMS (Content Management System) library that you're initializing.
-import type { InitOptions } from "payload/config";
-import payload, {Payload } from "payload";
+import payload, { InitOptions, Payload } from "payload";
 
-dotenv.config({
-  path: path.resolve(__dirname, "../../.env"),
-});
-
+dotenv.config();
 
 let cached = (global as any).payload;
 
@@ -19,14 +14,16 @@ if (!cached) {
 }
 
 interface Args {
-  initOptions?: Partial<InitOptions>;
+  initOptions?: any;
 }
 
-export async function getPayloadClient({
-  initOptions,
-}: Args = {}){
+export const getPayloadClient = async ({
+  initOptions = {},
+}: Args = {}) => {  
   if (!process.env.PAYLOAD_SECRET) {
-    throw new Error("Payload secret is required");
+    throw new Error(
+      "PAYLOAD_SECRET environment variable is required but not defined."
+    );
   }
 
   if (cached.client) {
@@ -36,17 +33,18 @@ export async function getPayloadClient({
   if (!cached.promise) {
     cached.promise = payload.init({
       secret: process.env.PAYLOAD_SECRET,
-      local:initOptions?.express ? false : true,
-      ...(initOptions || {}),
+      mongoURL: process.env.MONGO_URL, // Use `mongoURL` for database connection
+      local: process.env.NODE_ENV === "development", // Set `local` based on the environment
+      ...initOptions, // Spread the rest of the init options
     });
   }
 
   try {
     cached.client = await cached.promise;
   } catch (error) {
-    cached.promise = null; // Reset the promise to allow retries
+    cached.promise = null; // Reset the promise on error
     throw error;
   }
 
   return cached.client;
-}
+};
